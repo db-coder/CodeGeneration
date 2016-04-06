@@ -216,8 +216,8 @@ namespace
 	}
 	void store_word(string s, int x)
 	{
-		if(s[0] == 't')cout << "\tsw $"<<s<<" -"<<x<<"($fp)"<<endl;
-		else cout << "\ts.s $"<<s<<" -"<<x<<"($fp)"<<endl;
+		if(s[0] == 't')cout << "\tsw $"<<s<<" "<<x<<"($fp)"<<endl;
+		else cout << "\ts.s $"<<s<<" "<<x<<"($fp)"<<endl;
 	}
 }
 class symbols
@@ -982,6 +982,7 @@ class ass_astnode : public exp_astnode
 			string s = right->generate_code();
 			int x = left->offset();
 			store_word(s, x);
+			return "";
 		}
 };
 
@@ -1015,8 +1016,12 @@ class if_astnode : public stmt_astnode
 		virtual string generate_code()
 		{
 			string s = left->generate_code();
-			cout << "\tbeq $"<<s << " $0 "<<label-1<<endl;
-			cout << "\tj "<<label<<endl;
+			cout << "\tbeq $"<<s << " $0 "<<label+1<<endl;
+			middle->generate_code();
+			cout<<"j "<<label+2<<endl;
+			generate_label();
+			right->generate_code();
+			generate_label();
 		}
 };
 
@@ -1231,9 +1236,11 @@ class list_astnode : public stmt_astnode
 		}
 		virtual string generate_code()
 		{
-			stmt->generate_code();
+			cout<<"yo"<<endl;
 			if(list!=0)
 				list->generate_code();
+			stmt->generate_code();
+			return "";
 		}
 };
 
@@ -1258,7 +1265,9 @@ class block_astnode : public stmt_astnode
 		}	
 		virtual string generate_code()
 		{
+			cout<<"block"<<endl;
 			block->generate_code();
+			return "";
 		}
 };
 
@@ -1300,8 +1309,9 @@ class id_astnode : public ref_astnode
 		}
 		virtual string generate_code()
 		{
+			cout<<"id"<<endl;
 			int off = top_local->offset(id_name);
-			cout << "\tlw $t0 -"<<off<<"($fp)"<<endl;
+			cout << "\tlw $t0 "<<off<<"($fp)"<<endl;
 			return "t0";
 		}
 		virtual int print(int ident)
@@ -1348,7 +1358,7 @@ class member_astnode : public ref_astnode
 		virtual string generate_code()
 		{
 			int off = this->offset();
-			cout << "\tlw $t0 -"<<off<<"($fp)"<<endl;
+			cout << "\tlw $t0 "<<off<<"($fp)"<<endl;
 			return "t0";
 		}
 };
@@ -1392,7 +1402,7 @@ class arrow_astnode : public ref_astnode
 		virtual string generate_code()
 		{
 			int off = this->offset();
-			cout << "\tlw $t0 -"<<off<<"($fp)"<<endl;
+			cout << "\tlw $t0 "<<off<<"($fp)"<<endl;
 			return "t0";
 		}
 };

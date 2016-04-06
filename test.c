@@ -1,10 +1,7 @@
-int f(int x,int y)
+int f()
 {
-	int a;
-	a=x+y;
-	return a;
+	return 1;
 }
-
 int main()
 {
     int a,b;

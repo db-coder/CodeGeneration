@@ -1,12 +1,17 @@
 f:
-	lw $t0 -0($fp)
+block
+yo
+	li $t0 1
 	move $sp $fp
 	jr $ra
-	lw $t0 --8($fp)
-	addi $sp $sp -4
-	sw $t0 0($sp)
-	lw $t0 --4($fp)
-	lw $t1 0($sp)
-	addi $sp $sp 4
-	add $t0 $t0 $t1
-	sw $t0 -0($fp)
+main:
+block
+yo
+yo
+id
+	lw $t0 4($fp)
+	sw $t0 0($fp)
+id
+	lw $t0 0($fp)
+	move $sp $fp
+	jr $ra
