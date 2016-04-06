@@ -209,15 +209,15 @@ namespace
 	}
 	void store_register(string s)
 	{
-		cout <<"addi $sp $sp -4"<<endl;
-		if(s[0] == 't')cout << "sw $"<<s<<" 0($sp)"<<endl;
-		else cout << "s.s $"<<s<<" 0($sp)"<<endl;
+		cout <<"\taddi $sp $sp -4"<<endl;
+		if(s[0] == 't')cout << "\tsw $"<<s<<" 0($sp)"<<endl;
+		else cout << "\ts.s $"<<s<<" 0($sp)"<<endl;
 
 	}
 	void store_word(string s, int x)
 	{
-		if(s[0] == 't')cout << "sw $"<<s<<" -"<<x<<"($fp)"<<endl;
-		else cout << "s.s $"<<s<<" -"<<x<<"($fp)"<<endl;
+		if(s[0] == 't')cout << "\tsw $"<<s<<" -"<<x<<"($fp)"<<endl;
+		else cout << "\ts.s $"<<s<<" -"<<x<<"($fp)"<<endl;
 	}
 }
 class symbols
@@ -280,6 +280,16 @@ class symTab
 			for(int i = 0; i <table.size(); i++)
 				if(table[i]->name == s)
 					return table[i]->t;
+		}
+		int offset(string s)
+		{
+			for (int i = 0; i < table.size(); ++i)
+			{
+				if(table[i]->name==s)
+				{
+					return table[i]->offset;
+				}
+			}
 		}
 };
 
@@ -466,7 +476,6 @@ class globalSymTab
 				}
 			}
 			return b;
-			
 		}
 		type * findtype(string s)
 		{
@@ -475,7 +484,12 @@ class globalSymTab
 					return table[i]->t;
 			cerr<<"err\n";
 			err(1,s);
-
+		}
+		int offsetStruct(string s,string n)
+		{
+			for(int i = 0; i <table.size(); i++)
+				if(table[i]->name == s && (table[i]->t)->name=="STRUCT")
+					return (table[i]->table)->offset(n);
 		}
 };
 
@@ -499,7 +513,7 @@ class abstract_astnode
 		bool lvalue;
 		virtual int print (int ident) = 0;
 		// virtual int value () = 0;
-		virtual void generate_code() = 0;
+		virtual string generate_code() = 0;
 		// virtual basic_types getType() = 0;
 		// virtual bool checkTypeofAST() = 0;
 	// 	protected:
@@ -514,7 +528,7 @@ class stmt_astnode : public abstract_astnode
 		string stmt_name;
 		virtual int print(int ident)=0;
 		virtual void validate(type *t){}
-		virtual string generate_code(){}
+		virtual string generate_code() =0;
 		virtual int offset(){}
 
 };
@@ -526,7 +540,7 @@ class exp_astnode : public stmt_astnode
 		string exp_name;
 		virtual int print(int ident) = 0;
 		virtual void validate(){};
-		virtual string generate_code(){}
+		virtual string generate_code() = 0;
 		virtual int offset(){}
 };
 
@@ -572,28 +586,29 @@ class unary_astnode : public exp_astnode
 		}	
 
 		//t0- result, operands t1,t2
-		void generate_code()
+		virtual string generate_code()
 		{
 			left->generate_code();
 			if(exp_name=="PP")
 			{
-				cout << "addi $t0 $t0 1"
+				cout << "\taddi $t0 $t0 1";
 			}
 			if(exp_name == "!")					//fix this
 			{
-				cout << "lw $8 0($sp)";
+				cout << "\tnot $t0 $t0";
 			}
 
 			if(exp_name == "*")
 			{
-				cout << "lw $t0 0($t0)";
+				cout << "\tlw $t0 0($t0)";
 			}
 
 			if(exp_name == "&")
 			{
 				int x = left->offset();
-				cout << "addi $t0 $fp "<<x<<endl;	
+				cout << "\taddi $t0 $fp "<<x<<endl;	
 			}
+			return "t0";
 		}	
 };
 
@@ -694,32 +709,40 @@ class binary_astnode : public exp_astnode
 				}
 			}	
 		}
-		void generate_code()
+		virtual string generate_code()
 		{
-			left->generate_code();
-			cout << "addi $sp, $sp, -4";
-			cout << "sw $t0 0($sp)";
+			string s = left->generate_code();
+			store_register(s);
 			right->generate_code();
-			cout << "lw $t1 0($sp)"<<endl;
-			cout << "addi $sp $sp 4"<<endl;
+			cout << "\tlw $t1 0($sp)"<<endl;
+			cout << "\taddi $sp $sp 4"<<endl;
 			if(exp_name == "AND_OP")
-				cout << "and $t0 $t0 $t1"<<endl;
+				cout << "\tand $t0 $t0 $t1"<<endl;
 			if(exp_name == "OR_OP")
-				cout << "or $t0 $t0 $t1"<<endl;
+				cout << "\tor $t0 $t0 $t1"<<endl;
 			if(exp_name == "NE_OP")
-				cout << "not $t0 $t0 $t1"<<endl;
+			{
+				cout << "\tbne $t0 $t1 "<<label+1<<endl;
+				cout << "\taddi $t0 0 0"<<endl;
+				generate_label();
+				cout << "\taddi $t0 0 1"<<endl;
+			}
 			if(exp_name == "EQ_OP")
-				cout << " $t0 $t0 $t1"<<endl;
-			
-
+			{
+				cout << "\tbeq $t0 $t1 "<<label+1<<endl;
+				cout << "\taddi $t0 0 0"<<endl;
+				generate_label();
+				cout << "\taddi $t0 0 1"<<endl;
+			}
 			if(exp_name == "PLUS")
-				cout << "add $t0 $t0 $t1"<<endl;
+				cout << "\tadd $t0 $t0 $t1"<<endl;
 			if(exp_name == "MINUS")
-				cout << "sub $t0 $t0 $t1"<<endl;
+				cout << "\tsub $t0 $t0 $t1"<<endl;
 			if(exp_name == "Multiply")
-				cout << "mul $t0 $t0 $t1"<<endl;
+				cout << "\tmul $t0 $t0 $t1"<<endl;
 			if(exp_name == "Divide")
-				cout << " $t0 $t0 $t1"<<endl;
+				cout << "\tdiv $t0 $t0 $t1"<<endl;
+			return "t0";
 		}
 };
 
@@ -741,9 +764,9 @@ class float_astnode : public exp_astnode
 			string s = to_string(val);
 			return 13 + s.size();
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
-			cout << "l.s $f1 "<<val << endl;
+			cout << "\tl.s $f1 "<<val << endl;
 			return "f1";
 		}
 };
@@ -764,9 +787,9 @@ class int_astnode : public exp_astnode
 			string s = to_string(val);
 			return s.size() + 11;
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
-			cout << "li $t0 "<<val << endl;
+			cout << "\tli $t0 "<<val << endl;
 			return "t0"; 
 		}
 };
@@ -788,6 +811,8 @@ class string_astnode : public exp_astnode
 			cout<< "(StringConst "<<val<<")"; 
 			return val.size() + 14;
 		}
+		virtual string generate_code()
+		{}
 };
 
 class func_astnode : public exp_astnode  					//CHECK in future!!!
@@ -867,16 +892,16 @@ class func_astnode : public exp_astnode  					//CHECK in future!!!
 			if(k == 0)err(8,val);	
 			if(k == 2)err(8,val);
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
 			for(int i = 0; i <list.size(); i++)
 			{
-				string s = list[i]->generate_code;
+				string s = list[i]->generate_code();
 				store_register(s);
 			}	
 			store_register("fp");
-			cout << "mv $fp $sp"<<endl;
-			cout << "jal "<< val <<endl;
+			cout << "\tmove $fp $sp"<<endl;
+			cout << "\tjal "<< val <<endl;
 		}
 };		
 
@@ -952,7 +977,7 @@ class ass_astnode : public exp_astnode
 			cout<<")"; 
 			return exp_name.size()+x+y+4;
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
 			string s = right->generate_code();
 			int x = left->offset();
@@ -987,11 +1012,11 @@ class if_astnode : public stmt_astnode
 			cout<<")"; 
 			return max(max(y,z), x + 4);
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
 			string s = left->generate_code();
-			cout << "beq $"<<s << " $0 "<<label-1<<endl;
-			cout << "j "<<label<<endl;
+			cout << "\tbeq $"<<s << " $0 "<<label-1<<endl;
+			cout << "\tj "<<label<<endl;
 		}
 };
 
@@ -1009,6 +1034,8 @@ class empty_astnode : public stmt_astnode
 			cout<< "("<<stmt_name<<")";
 			return 2+ stmt_name.size(); 
 		}
+		virtual string generate_code()
+		{}
 };
 
 
@@ -1081,13 +1108,12 @@ class return_astnode : public stmt_astnode
 			}
 			else if(n1 != n2)err(5);
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
 			string s = left->generate_code();
-			cout << "mv $sp $fp"<<endl;
-			cout << "jr $ra"<<endl;
+			cout << "\tmove $sp $fp"<<endl;
+			cout << "\tjr $ra"<<endl;
 			return s;
-
 		}
 };		
 
@@ -1123,17 +1149,16 @@ class for_astnode : public stmt_astnode
 			cout<<")"; 
 			return max(5+x, max(y,max(z,w+1)));
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
 			left->generate_code();
 			generate_label();
 			string s1 = middle->generate_code();
-			cout << "beq $"<<s1<<" $0"<<label+1<<endl;
+			cout << "\tbeq $"<<s1<<" $0"<<label+1<<endl;
 			stmt->generate_code();
 			right->generate_code();
-			cout << "j "<<label<<endl;
+			cout << "\tj "<<label<<endl;
 			generate_label();
-
 		}
 };
 
@@ -1161,15 +1186,14 @@ class while_astnode : public stmt_astnode
 			cout<<")";
 			return max(7+x, y+1); 
 		}	
-		string generate_code()
+		virtual string generate_code()
 		{
 			generate_label();
 			string s = left->generate_code();
-			cout << "beq $"<<s<<" $0 "<<label+1<<endl;
+			cout << "\tbeq $"<<s<<" $0 "<<label+1<<endl;
 			stmt->generate_code();
-			cout << "j "<<label<<endl;
+			cout << "\tj "<<label<<endl;
 			generate_label();
-
 		}
 };
 
@@ -1205,10 +1229,11 @@ class list_astnode : public stmt_astnode
 			return max(x, y);
 			
 		}
-		string generate_code()
+		virtual string generate_code()
 		{
 			stmt->generate_code();
-			if(list!=0)list->generate_code();
+			if(list!=0)
+				list->generate_code();
 		}
 };
 
@@ -1231,7 +1256,7 @@ class block_astnode : public stmt_astnode
 			cout<<"])";
 			return 10 + x;
 		}	
-		string generate_code()
+		virtual string generate_code()
 		{
 			block->generate_code();
 		}
@@ -1242,39 +1267,9 @@ class ref_astnode : public exp_astnode
 	public:
 		string ref_name;
 		virtual int print(int ident)=0;
+		virtual string generate_code() = 0;
 };
-/*
-class assgn_astnode : public stmt_astnode
-{
-	private:
-		ref_astnode *left;
-		exp_astnode *right;
-	public:
-		assgn_astnode()
-		{
-			stmt_name = "Ass";
-			left = 0;
-			right = 0;
-		}
-		assgn_astnode(ref_astnode *l, exp_astnode *r)
-		{
-			stmt_name = "Ass";
-			left = l;
-			right = r;
-		}
 
-		virtual int print(int ident)
-		{
-			int x = 0, y = 0;
-			cout<< "("<<stmt_name << ' ';
-			if(left!=0)x = left->print(ident + stmt_name.size()+2);
-			cout << ' ';
-			if(right!=0)y = right->print(ident+ x+ 3 + stmt_name.size());
-			cout<<")"; 
-			return stmt_name.size() + 4 + x + y;
-		}	
-};
-*/
 class id_astnode : public ref_astnode
 {
 	public:
@@ -1306,12 +1301,9 @@ class id_astnode : public ref_astnode
 		virtual string generate_code()
 		{
 			int off = top_local->offset(id_name);
-			
-			cout << "lw $t0 -"<<off<<"($fp)"<<endl;
+			cout << "\tlw $t0 -"<<off<<"($fp)"<<endl;
 			return "t0";
-			 
 		}
-
 		virtual int print(int ident)
 		{
 			cout<< "("<<ref_name<<" \"" <<id_name<<"\")" ;
@@ -1349,18 +1341,16 @@ class member_astnode : public ref_astnode
 		int offset()
 		{
 			int off1 = id->offset();
-			string s = (id->type)->name;
-			int off2 = top->offsetStruct(s, mem->name);
+			string s = (id->t)->name;
+			int off2 = top->offsetStruct(s, mem->id_name);
 			return off1 + off2;
-
 		}
-		void generate_code()
+		virtual string generate_code()
 		{
 			int off = this->offset();
-			cout << "lw $t0 -"<<off<<"($fp)"<<endl;
+			cout << "\tlw $t0 -"<<off<<"($fp)"<<endl;
 			return "t0";
 		}
-
 };
 
 class arrow_astnode : public ref_astnode
@@ -1392,22 +1382,19 @@ class arrow_astnode : public ref_astnode
 			cout<<")";
 			return 6+x+y+3;
 		}
-				int offset()
+		int offset()
 		{
 			int off1 = id->offset();
-			string s = (id->type)->name;
-			int off2 = top->offsetStruct(s, mem->name);
+			string s = (id->t)->name;
+			int off2 = top->offsetStruct(s, mem->id_name);
 			return off1 + off2;
-
 		}
-		void generate_code()
+		virtual string generate_code()
 		{
 			int off = this->offset();
-			cout << "lw $t0 -"<<off<<"($fp)"<<endl;
+			cout << "\tlw $t0 -"<<off<<"($fp)"<<endl;
 			return "t0";
 		}
-
-
 };
 
 class arrref_astnode : public ref_astnode
@@ -1440,6 +1427,8 @@ class arrref_astnode : public ref_astnode
 			if(params-> t == NULL)err(15);
 			if((params->t)->name != "int")err(15);
 		}
+		virtual string generate_code()
+		{}
 };		
 
 class ptr_astnode : public exp_astnode

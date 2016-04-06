@@ -66,6 +66,7 @@ function_definition
 			top->put(name_func,top_local->total_width(),0,ret,top_local,params);
 		else
 			top->put(name_func,top_local->total_width(),0,ret,top_local);
+		cout << name_func<<":"<<endl;
 	} 
 	compound_statement 
 	{}
@@ -213,12 +214,13 @@ compound_statement
 	{
 		$$ = new block_astnode($2);
 		//($$)->print(0);
-
+		($$)->generate_code();
 	}
     | '{' declaration_list statement_list '}' 
     {
 		$$ = new block_astnode($3);
 		//($$)->print(0);
+		($$)->generate_code();
 	}
 	;
 
