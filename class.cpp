@@ -63,6 +63,7 @@ class base_type : public type //float, int, void, struct
 };
 namespace
 {
+	int label = 0;
 	string name_func="",name_struct="";
 	bool equal(type *t1, type *t2) //check, seriously!
 	{
@@ -200,6 +201,23 @@ namespace
 	{
 		if(i==1)
 			cerr << "test.c: In function '"<<name_func<<"':\n"<< "test.c:"<<l_no<<": warning: "<<"function returns address of local variable."<<endl;
+	}
+	void generate_label()
+	{
+		label++;
+		cout << label << ":"<<endl;
+	}
+	void store_register(string s)
+	{
+		cout <<"addi $sp $sp -4"<<endl;
+		if(s[0] == 't')cout << "sw $"<<s<<" 0($sp)"<<endl;
+		else cout << "s.s $"<<s<<" 0($sp)"<<endl;
+
+	}
+	void store_word(string s, int x)
+	{
+		if(s[0] == 't')cout << "sw $"<<s<<" -"<<x<<"($fp)"<<endl;
+		else cout << "s.s $"<<s<<" -"<<x<<"($fp)"<<endl;
 	}
 }
 class symbols
@@ -496,7 +514,9 @@ class stmt_astnode : public abstract_astnode
 		string stmt_name;
 		virtual int print(int ident)=0;
 		virtual void validate(type *t){}
-		virtual void generate_code(){}
+		virtual string generate_code(){}
+		virtual int offset(){}
+
 };
 
 class exp_astnode : public stmt_astnode
@@ -506,7 +526,8 @@ class exp_astnode : public stmt_astnode
 		string exp_name;
 		virtual int print(int ident) = 0;
 		virtual void validate(){};
-		virtual void generate_code(){}
+		virtual string generate_code(){}
+		virtual int offset(){}
 };
 
 class unary_astnode : public exp_astnode
@@ -1278,12 +1299,17 @@ class id_astnode : public ref_astnode
 					t = (top_local->table[i])->t;
 			}
 		}
-		virtual void generate_code()
+		int offset()
+		{
+			return top_local->offset(id_name);
+		}
+		virtual string generate_code()
 		{
 			int off = top_local->offset(id_name);
-			cout << "addi $sp, $sp, -4"<<endl;
-			cout << "lw $1,"<<off<<"($fp)"<<endl;
-			cout << "sw $1 0($sp)"<<endl; 
+			
+			cout << "lw $t0 -"<<off<<"($fp)"<<endl;
+			return "t0";
+			 
 		}
 
 		virtual int print(int ident)
@@ -1320,13 +1346,21 @@ class member_astnode : public ref_astnode
 			cout<<")";
 			return 5+x+y+5;
 		}
+		int offset()
+		{
+			int off1 = id->offset();
+			string s = (id->type)->name;
+			int off2 = top->offsetStruct(s, mem->name);
+			return off1 + off2;
+
+		}
 		void generate_code()
 		{
-			int off = top_local->offset(id_name);
-			cout << "addi $sp, $sp, -4"<<endl;
-			cout << "lw $1,"<<off<<"($fp)"<<endl;
-			cout << "sw $1 0($sp)"<<endl; 
+			int off = this->offset();
+			cout << "lw $t0 -"<<off<<"($fp)"<<endl;
+			return "t0";
 		}
+
 };
 
 class arrow_astnode : public ref_astnode
@@ -1358,6 +1392,22 @@ class arrow_astnode : public ref_astnode
 			cout<<")";
 			return 6+x+y+3;
 		}
+				int offset()
+		{
+			int off1 = id->offset();
+			string s = (id->type)->name;
+			int off2 = top->offsetStruct(s, mem->name);
+			return off1 + off2;
+
+		}
+		void generate_code()
+		{
+			int off = this->offset();
+			cout << "lw $t0 -"<<off<<"($fp)"<<endl;
+			return "t0";
+		}
+
+
 };
 
 class arrref_astnode : public ref_astnode
