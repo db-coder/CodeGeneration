@@ -1018,7 +1018,7 @@ class if_astnode : public stmt_astnode
 			string s = left->generate_code();
 			cout << "\tbeq $"<<s << " $0 "<<label+1<<endl;
 			middle->generate_code();
-			cout<<"j "<<label+2<<endl;
+			cout<<"\tj "<<label+2<<endl;
 			generate_label();
 			right->generate_code();
 			generate_label();
@@ -1236,7 +1236,6 @@ class list_astnode : public stmt_astnode
 		}
 		virtual string generate_code()
 		{
-			cout<<"yo"<<endl;
 			if(list!=0)
 				list->generate_code();
 			stmt->generate_code();
@@ -1265,7 +1264,6 @@ class block_astnode : public stmt_astnode
 		}	
 		virtual string generate_code()
 		{
-			cout<<"block"<<endl;
 			block->generate_code();
 			return "";
 		}
@@ -1309,7 +1307,6 @@ class id_astnode : public ref_astnode
 		}
 		virtual string generate_code()
 		{
-			cout<<"id"<<endl;
 			int off = top_local->offset(id_name);
 			cout << "\tlw $t0 "<<off<<"($fp)"<<endl;
 			return "t0";
