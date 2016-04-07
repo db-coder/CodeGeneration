@@ -210,9 +210,9 @@ namespace
 	void store_register(string s)
 	{
 		cout <<"\taddi $sp $sp -4"<<endl;
-		if(s[0] == 't')
+		if(s[0] == 't' || s == "fp")
 			cout << "\tsw $"<<s<<" 0($sp)"<<endl;
-		else 
+		else
 		{
 			cout << "\tmfc1 $"<<s<<" $t"<<s[1]<<endl;
 			cout << "\tsw $t"<<s[1]<<" 0($sp)"<<endl;
@@ -220,9 +220,9 @@ namespace
 	}
 	void store_word(string s, int x)
 	{
-		if(s[0] == 't')
+		if(s[0] == 't' || s == "fp")
 			cout << "\tsw $"<<s<<" "<<x<<"($fp)"<<endl;
-		else 
+		else
 		{
 			cout << "\tmfc1 $"<<s<<" $t"<<s[1]<<endl;
 			cout << "\tsw $t"<<s[1]<<" "<<x<<"($fp)"<<endl;
