@@ -19,5 +19,5 @@ parse.cc Parser.h Parserbase.h Parser.ih: parse.y
 
 .PHONY: clean     
 clean:
-	$(RM) -f Parser.ih Parser.h Parserbase.h parse.cc Scanner.ih Scanner.h Scannerbase.h lex.cc parse.y.output parser junk *~
+	$(RM) -f Parser.ih Parser.h Parserbase.h parse.cc Scanner.ih Scanner.h Scannerbase.h lex.cc parse.y.output parser *~
 

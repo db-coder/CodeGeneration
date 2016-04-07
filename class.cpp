@@ -210,14 +210,23 @@ namespace
 	void store_register(string s)
 	{
 		cout <<"\taddi $sp $sp -4"<<endl;
-		if(s[0] == 't')cout << "\tsw $"<<s<<" 0($sp)"<<endl;
-		else cout << "\ts.s $"<<s<<" 0($sp)"<<endl;
-
+		if(s[0] == 't')
+			cout << "\tsw $"<<s<<" 0($sp)"<<endl;
+		else 
+		{
+			cout << "\tmfc1 $"<<s<<" $t"<<s[1]<<endl;
+			cout << "\tsw $t"<<s[1]<<" 0($sp)"<<endl;
+		}
 	}
 	void store_word(string s, int x)
 	{
-		if(s[0] == 't')cout << "\tsw $"<<s<<" "<<x<<"($fp)"<<endl;
-		else cout << "\ts.s $"<<s<<" "<<x<<"($fp)"<<endl;
+		if(s[0] == 't')
+			cout << "\tsw $"<<s<<" "<<x<<"($fp)"<<endl;
+		else 
+		{
+			cout << "\tmfc1 $"<<s<<" $t"<<s[1]<<endl;
+			cout << "\tsw $t"<<s[1]<<" "<<x<<"($fp)"<<endl;
+		}
 	}
 }
 class symbols
@@ -713,36 +722,83 @@ class binary_astnode : public exp_astnode
 		{
 			string s = left->generate_code();
 			store_register(s);
-			right->generate_code();
+			string s1 = right->generate_code();
+			string conv="";
 			cout << "\tlw $t1 0($sp)"<<endl;
+			if(s[0] == 'f')
+				cout << "\tmtc1 $t1 $f1"<<endl;
 			cout << "\taddi $sp $sp 4"<<endl;
+			if(s[0] == 'f' && s1[0] == 't')
+			{
+				cout << "\tmtc1 $t0 $f0"<<endl;
+				cout << "\tcvt.s.w $f0 $f0"<<endl;
+				s1="f0";
+				conv=".s";
+			}
+			else if(s1[0] == 'f' && s[0] == 't')
+			{
+				cout << "\tmtc1 $t1 $f1"<<endl;
+				cout << "\tcvt.s.w $f1 $f1"<<endl;
+				s="f1";
+				conv=".s";
+			}
+			else if(s[0] == 'f' && s1[0] == 'f')
+				conv=".s";
 			if(exp_name == "AND_OP")
-				cout << "\tand $t0 $t0 $t1"<<endl;
-			if(exp_name == "OR_OP")
-				cout << "\tor $t0 $t0 $t1"<<endl;
-			if(exp_name == "NE_OP")
+				cout << "\tand $t0 $"<<s1[0]<<"0 $"<<s[0]<<"1"<<endl;
+			else if(exp_name == "OR_OP")
+				cout << "\tor $t0 $"<<s1[0]<<"0 $"<<s[0]<<"1"<<endl;
+			else if(exp_name == "NE_OP")
 			{
-				cout << "\tbne $t0 $t1 "<<label+1<<endl;
+				cout << "\tbne $"<<s1[0]<<"0 $"<<s[0]<<"1 "<<label+1<<endl;
 				cout << "\taddi $t0 0 0"<<endl;
 				generate_label();
 				cout << "\taddi $t0 0 1"<<endl;
 			}
-			if(exp_name == "EQ_OP")
+			else if(exp_name == "EQ_OP")
 			{
-				cout << "\tbeq $t0 $t1 "<<label+1<<endl;
+				cout << "\tbeq $"<<s1[0]<<"0 $"<<s[0]<<"1 "<<label+1<<endl;
 				cout << "\taddi $t0 0 0"<<endl;
 				generate_label();
 				cout << "\taddi $t0 0 1"<<endl;
 			}
-			if(exp_name == "PLUS")
-				cout << "\tadd $t0 $t0 $t1"<<endl;
-			if(exp_name == "MINUS")
-				cout << "\tsub $t0 $t0 $t1"<<endl;
-			if(exp_name == "Multiply")
-				cout << "\tmul $t0 $t0 $t1"<<endl;
-			if(exp_name == "Divide")
-				cout << "\tdiv $t0 $t0 $t1"<<endl;
-			return "t0";
+			else if(exp_name == "LT")
+			{
+				cout << "\tblt $"<<s1[0]<<"0 $"<<s[0]<<"1 "<<label+1<<endl;
+				cout << "\taddi $t0 0 0"<<endl;
+				generate_label();
+				cout << "\taddi $t0 0 1"<<endl;
+			}
+			else if(exp_name == "GT")
+			{
+				cout << "\tbgt $"<<s1[0]<<"0 $"<<s[0]<<"1 "<<label+1<<endl;
+				cout << "\taddi $t0 0 0"<<endl;
+				generate_label();
+				cout << "\taddi $t0 0 1"<<endl;
+			}
+			else if(exp_name == "LE_OP")
+			{
+				cout << "\tble $"<<s1[0]<<"0 $"<<s[0]<<"1 "<<label+1<<endl;
+				cout << "\taddi $t0 0 0"<<endl;
+				generate_label();
+				cout << "\taddi $t0 0 1"<<endl;
+			}
+			else if(exp_name == "GE_OP")
+			{
+				cout << "\tbge $"<<s1[0]<<"0 $"<<s[0]<<"1 "<<label+1<<endl;
+				cout << "\taddi $t0 0 0"<<endl;
+				generate_label();
+				cout << "\taddi $t0 0 1"<<endl;
+			}
+			else if(exp_name == "PLUS")
+				cout << "\tadd"<<conv<<" $"<<s[0]<<"0 $"<<s1[0]<<"0 $"<<s[0]<<"1"<<endl;
+			else if(exp_name == "MINUS")
+				cout << "\tsub"<<conv<<" $"<<s[0]<<"0 $"<<s1[0]<<"0 $"<<s[0]<<"1"<<endl;
+			else if(exp_name == "Multiply")
+				cout << "\tmul"<<conv<<" $"<<s[0]<<"0 $"<<s1[0]<<"0 $"<<s[0]<<"1"<<endl;
+			else if(exp_name == "Divide")
+				cout << "\tdiv"<<conv<<" $"<<s[0]<<"0 $"<<s1[0]<<"0 $"<<s[0]<<"1"<<endl;
+			return s1;
 		}
 };
 
@@ -1309,6 +1365,11 @@ class id_astnode : public ref_astnode
 		{
 			int off = top_local->offset(id_name);
 			cout << "\tlw $t0 "<<off<<"($fp)"<<endl;
+			if(t->name == "float")
+			{
+				cout << "\tmtc1 $t0 $f0"<<endl;
+				return "f0";
+			}
 			return "t0";
 		}
 		virtual int print(int ident)
