@@ -214,12 +214,14 @@ compound_statement
 	{
 		$$ = new block_astnode($2);
 		//($$)->print(0);
+		cout<<"\tmove $fp $sp"<<endl;
 		($$)->generate_code();
 	}
     | '{' declaration_list statement_list '}' 
     {
 		$$ = new block_astnode($3);
 		//($$)->print(0);
+		cout<<"\tmove $fp $sp"<<endl;
 		($$)->generate_code();
 	}
 	;

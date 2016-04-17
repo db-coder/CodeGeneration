@@ -1,66 +1,8 @@
-f:
-	li $t0 1
-	move $sp $fp
-	jr $ra
 main:
-	lw $t0 4($fp)
-	mtc1 $t0 $f0
-	addi $sp $sp -4
-	mfc1 $f0 $t0
-	sw $t0 0($sp)
-	lw $t0 8($fp)
-	mtc1 $t0 $f0
-	lw $t1 0($sp)
-	mtc1 $t1 $f1
-	addi $sp $sp 4
-	add.s $f0 $f0 $f1
-	addi $sp $sp -4
-	mfc1 $f0 $t0
-	sw $t0 0($sp)
-	lw $t0 12($fp)
-	mtc1 $t0 $f0
-	addi $sp $sp -4
-	mfc1 $f0 $t0
-	sw $t0 0($sp)
-	lw $t0 8($fp)
-	mtc1 $t0 $f0
-	lw $t1 0($sp)
-	mtc1 $t1 $f1
-	addi $sp $sp 4
-	add.s $f0 $f0 $f1
-	lw $t1 0($sp)
-	mtc1 $t1 $f1
-	addi $sp $sp 4
-	mul.s $f0 $f0 $f1
-	mfc1 $f0 $t0
-	sw $t0 0($fp)
-	lw $t0 0($fp)
-	mtc1 $t0 $f0
-	addi $sp $sp -4
-	mfc1 $f0 $t0
-	sw $t0 0($sp)
-	lw $t0 4($fp)
-	mtc1 $t0 $f0
-	lw $t1 0($sp)
-	mtc1 $t1 $f1
-	addi $sp $sp 4
-	beq $f0 $f1 1
-	addi $t0 0 0
-1:
-	addi $t0 0 1
-	beq $f0 $0 2
-	li $t0 1
-	sw $t0 4($fp)
-	j 3
-2:
-	li $t0 1
-	sw $t0 0($fp)
-	addi $sp $sp -4
-	sw $fp 0($sp)
 	move $fp $sp
-	jal f
-3:
-	lw $t0 0($fp)
-	mtc1 $t0 $f0
+	lw $t0 40($fp)
+	lw $t0 0($t0)
+	sw $t0 20($fp)
+	li $t0 1
 	move $sp $fp
 	jr $ra

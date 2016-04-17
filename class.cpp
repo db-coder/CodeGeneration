@@ -600,22 +600,22 @@ class unary_astnode : public exp_astnode
 			left->generate_code();
 			if(exp_name=="PP")
 			{
-				cout << "\taddi $t0 $t0 1";
+				cout << "\taddi $t0 $t0 1"<<endl;;
 			}
 			if(exp_name == "!")					//fix this
 			{
-				cout << "\tnot $t0 $t0";
+				cout << "\tnot $t0 $t0"<<endl;;
 			}
 
 			if(exp_name == "*")
 			{
-				cout << "\tlw $t0 0($t0)";
+				cout << "\tlw $t0 0($t0)"<<endl;;
 			}
 
 			if(exp_name == "&")
 			{
 				int x = left->offset();
-				cout << "\taddi $t0 $fp "<<x<<endl;	
+				cout << "\taddiu $t0 $fp "<<x<<endl;	
 			}
 			return "t0";
 		}	
@@ -822,7 +822,7 @@ class float_astnode : public exp_astnode
 		}
 		virtual string generate_code()
 		{
-			cout << "\tl.s $f1 "<<val << endl;
+			cout << "\tli.s $f1 "<<val << endl;
 			return "f1";
 		}
 };
@@ -1450,17 +1450,20 @@ class arrow_astnode : public ref_astnode
 			cout<<")";
 			return 6+x+y+3;
 		}
-		int offset()
-		{
-			int off1 = id->offset();
-			string s = (id->t)->name;
-			int off2 = top->offsetStruct(s, mem->id_name);
-			return off1 + off2;
-		}
+		// int offset()
+		// {
+		// 	int off1 = id->offset();
+		// 	string s = (id->t)->name;
+		// 	int off2 = top->offsetStruct(s, mem->id_name);
+		// 	return off1 + off2;
+		// }
 		virtual string generate_code()
 		{
-			int off = this->offset();
+			int off = id->offset();
 			cout << "\tlw $t0 "<<off<<"($fp)"<<endl;
+			string s = (id->t)->name;
+			int off1 = top->offsetStruct(s, mem->id_name);
+			cout << "\tlw $t0 "<<off1<<"($t0)"<<endl;
 			return "t0";
 		}
 };
@@ -1495,8 +1498,27 @@ class arrref_astnode : public ref_astnode
 			if(params-> t == NULL)err(15);
 			if((params->t)->name != "int")err(15);
 		}
+		virtual int offset()
+		{
+			int off = id->offset();
+			return off+4*params->val;
+		}
 		virtual string generate_code()
-		{}
+		{
+			int off = this->offset();
+			cout << "\tlw $t0 "<<off<<"($fp)"<<endl;
+			type *temp =id->t;
+			while((temp->t)->t!=0)
+			{
+				temp = temp->t;
+			}
+			if((temp->t)->name=="float")
+			{
+				cout << "\tmfc1 $f0 $t0"<<endl;
+				return "f0";
+			}
+			return "t0";
+		}
 };		
 
 class ptr_astnode : public exp_astnode
