@@ -19,15 +19,45 @@ translation_unit
         	//top->printLast();
 	 	}
 	 	| function_definition 
-	 	{	 	
+	 	{
+	 		// cout<<"\t.rdata"<<endl;	 	
+	 		// for (int i = 0; i < rdata.size(); ++i)
+	 		// {
+	 		// 	cout<<rdata[i]<<endl;
+	 		// }
+	 		// cout<<"\t.text"<<endl;	 	
+	 		// for (int i = 0; i < text.size(); ++i)
+	 		// {
+	 		// 	cout<<text[i]<<endl;
+	 		// }
 	 		//top->printLast();
 	 	}
 	 	| translation_unit function_definition 
 	 	{	 		
+	 		cout<<"\t.rdata"<<endl;	 	
+	 		for (int i = 0; i < rdata.size(); ++i)
+	 		{
+	 			cout<<rdata[i]<<endl;
+	 		}
+	 		cout<<"\t.text"<<endl;	 	
+	 		for (int i = 0; i < text.size(); ++i)
+	 		{
+	 			cout<<text[i]<<endl;
+	 		}
 	 		//top->printLast();
 	 	}
         | translation_unit struct_specifier
-        {      	
+        {    
+    //     	cout<<"\t.rdata"<<endl;	 	
+	 		// for (int i = 0; i < rdata.size(); ++i)
+	 		// {
+	 		// 	cout<<rdata[i]<<endl;
+	 		// }
+	 		// cout<<"\t.text"<<endl;	 	
+	 		// for (int i = 0; i < text.size(); ++i)
+	 		// {
+	 		// 	cout<<text[i]<<endl;
+	 		// }  	
 	 		//top->printLast();
 	 	}
         ;
@@ -48,7 +78,7 @@ struct_specifier
         ;
 
 function_definition
-	: type_specifier { top_local = new symTab();ret = type1; offset = 0; params.clear();} fun_declarator 
+	: type_specifier {top_local = new symTab();ret = type1; offset = 0; params.clear();} fun_declarator 
 	{
 		if(!params.empty())
 		{
@@ -66,7 +96,7 @@ function_definition
 			top->put(name_func,top_local->total_width(),0,ret,top_local,params);
 		else
 			top->put(name_func,top_local->total_width(),0,ret,top_local);
-		cout << name_func<<":"<<endl;
+		text.push_back(name_func+":");
 	} 
 	compound_statement 
 	{}
@@ -214,14 +244,14 @@ compound_statement
 	{
 		$$ = new block_astnode($2);
 		//($$)->print(0);
-		cout<<"\tmove $fp $sp"<<endl;
+		text.push_back("\tmove $fp $sp");
 		($$)->generate_code();
 	}
     | '{' declaration_list statement_list '}' 
     {
 		$$ = new block_astnode($3);
 		//($$)->print(0);
-		cout<<"\tmove $fp $sp"<<endl;
+		text.push_back("\tmove $fp $sp");
 		($$)->generate_code();
 	}
 	;
@@ -398,7 +428,7 @@ postfix_expression
 	}
     | postfix_expression '[' expression ']'
     {
-    	if(top_local->InScope($1->exp_name)){cerr << "yo";};
+    	if(top_local->InScope($1->exp_name)){};
     	$$ = new arrref_astnode($1, $3); 
     	($$)->validate(); 
     }  
