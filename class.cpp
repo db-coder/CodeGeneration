@@ -227,10 +227,12 @@ namespace
 		}
 		else
 		{
-			content = "\tmfc1 $t" + s[1];
+			content = "\tmfc1 $t";
+			content += s[1];
 			content += " $" + s;
 			text.push_back(content);
-			content = "\tsw $t" + s[1];
+			content = "\tsw $t";
+			content += s[1];
 			content += " 0($sp)";
 			text.push_back(content);
 		}
@@ -249,10 +251,12 @@ namespace
 		}
 		else
 		{
-			string content = "\tmfc1 $t"+s[1];
-			content += "$"+s;
+			string content = "\tmfc1 $t";
+			content += s[1];
+			content += " $"+s;
 			text.push_back(content);
-			content = "\tsw $t"+s[1];
+			content = "\tsw $t";
+			content += s[1];
 			content += " "+sss;
 			content += "($fp)";
 			text.push_back(content);
@@ -1090,7 +1094,7 @@ class string_astnode : public exp_astnode
 			rdata.push_back(content);
 			content = "\t.ascii " + val;
 			rdata.push_back(content);
-			content = "\tli $a0 S" + sss;
+			content = "\tla $a0 S" + sss;
 			text.push_back(content);
 			return "a0";
 		}
@@ -1237,7 +1241,7 @@ class func_astnode : public exp_astnode  					//CHECK in future!!!
 						{
 							string content = "\tli $v0 2";
 							text.push_back(content);
-							content = "\tmove $f12 $"+s;
+							content = "\tmov.s $f12 $"+s;
 							text.push_back(content);
 						}
 					}
@@ -1474,7 +1478,7 @@ class return_astnode : public stmt_astnode
 		virtual string generate_code()
 		{
 			string s = left->generate_code();
-			string content = "\tmove $v0 " + s;
+			string content = "\tmove $v0 $" + s;
 			text.push_back(content);
 			ostringstream ss;
 			ss << store_reg*4;
@@ -1704,6 +1708,8 @@ class id_astnode : public ref_astnode
 			if(t->name == "float")
 			{
 				content = "\tmtc1 $t0 $f0";
+				text.push_back(content);
+				content = "\tcvt.s.w $f0 $f0";
 				text.push_back(content);
 				return "f0";
 			}

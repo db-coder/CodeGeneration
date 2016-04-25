@@ -13,6 +13,21 @@
 
 %%
 
+M 
+	: translation_unit
+	{
+		cout<<"\t.rdata"<<endl;	 	
+ 		for (int i = 0; i < rdata.size(); ++i)
+ 		{
+ 			cout<<rdata[i]<<endl;
+ 		}
+ 		cout<<"\t.text"<<endl;	 	
+ 		for (int i = 0; i < text.size(); ++i)
+ 		{
+ 			cout<<text[i]<<endl;
+ 		}	
+	}
+	;
 translation_unit 
         :  struct_specifier
         {
@@ -20,44 +35,14 @@ translation_unit
 	 	}
 	 	| function_definition 
 	 	{
-	 		// cout<<"\t.rdata"<<endl;	 	
-	 		// for (int i = 0; i < rdata.size(); ++i)
-	 		// {
-	 		// 	cout<<rdata[i]<<endl;
-	 		// }
-	 		// cout<<"\t.text"<<endl;	 	
-	 		// for (int i = 0; i < text.size(); ++i)
-	 		// {
-	 		// 	cout<<text[i]<<endl;
-	 		// }
 	 		//top->printLast();
 	 	}
 	 	| translation_unit function_definition 
 	 	{	 		
-	 		cout<<"\t.rdata"<<endl;	 	
-	 		for (int i = 0; i < rdata.size(); ++i)
-	 		{
-	 			cout<<rdata[i]<<endl;
-	 		}
-	 		cout<<"\t.text"<<endl;	 	
-	 		for (int i = 0; i < text.size(); ++i)
-	 		{
-	 			cout<<text[i]<<endl;
-	 		}
 	 		//top->printLast();
 	 	}
         | translation_unit struct_specifier
         {    
-    //     	cout<<"\t.rdata"<<endl;	 	
-	 		// for (int i = 0; i < rdata.size(); ++i)
-	 		// {
-	 		// 	cout<<rdata[i]<<endl;
-	 		// }
-	 		// cout<<"\t.text"<<endl;	 	
-	 		// for (int i = 0; i < text.size(); ++i)
-	 		// {
-	 		// 	cout<<text[i]<<endl;
-	 		// }  	
 	 		//top->printLast();
 	 	}
         ;

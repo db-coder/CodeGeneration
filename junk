@@ -6,20 +6,10 @@ f:
 	move $v0 t0
 	move $sp $fp
 	jr $ra
-	.rdata
-	.text
-f:
-	move $fp $sp
-	li $t0 1
-	move $v0 t0
-	move $sp $fp
-	jr $ra
 main:
 	move $fp $sp
 	li $t0 1
-	sw $t0 8($fp)
-	lw $t0 12($fp)
-	sw $t0 4($fp)
+	sw $t0 0($fp)
 	li $t0 1
 	move $v0 t0
 	move $sp $fp
