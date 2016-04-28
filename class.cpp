@@ -65,7 +65,7 @@ class base_type : public type //float, int, void, struct
 namespace
 {
 	vector<string> rdata,text;
-	int label = 0, slabel =0, store_reg =0;;
+	int label = 0, slabel = 0, store_reg = 0, flabel = 0;
 	string name_func="",name_struct="";
 	bool equal(type *t1, type *t2) //check, seriously!
 	{
@@ -237,26 +237,82 @@ namespace
 			text.push_back(content);
 		}
 	}
-	void store_word(string s, int x)
+	void store_word(string s, int x, string convert)
 	{
 		ostringstream ss;
 		ss << x;
 		string sss(ss.str());
 		if(s[0] == 't' || s == "fp" || s == "v0")
 		{
-			string content = "\tsw $"+s;
+			string content;
+			if(convert == "TO-FLOAT")
+			{
+				content = "\tmtc1 $";
+				content += s;
+				content += " $f";
+				content += s[1];
+				text.push_back(content);
+
+				content = "\tcvt.s.w $f";
+				content += s[1];
+				content += " $f";
+				content += s[1];
+				text.push_back(content);
+
+				content = "\tmfc1 $";
+				content += s;
+				content += " $f";
+				content += s[1];
+				text.push_back(content);
+			}
+			content = "\tsw $"+s;
 			content += " "+sss;
 			content += "($fp)";
 			text.push_back(content);
 		}
 		else
 		{
-			string content = "\tmfc1 $t";
+			string content;
+			if(convert == "TO-INT")
+			{
+				content = "\tcvt.w.s $";
+				content += s;
+				content += " $";
+				content += s;
+				text.push_back(content);
+			}
+			content = "\tmfc1 $t";
 			content += s[1];
 			content += " $"+s;
 			text.push_back(content);
 			content = "\tsw $t";
 			content += s[1];
+			content += " "+sss;
+			content += "($fp)";
+			text.push_back(content);
+		}
+	}
+	void store_struct(string s, int x, int wid, int off)
+	{
+		for (int i = 0; i < wid; i+=4)
+		{
+			ostringstream ss;
+			ss << (x + i);
+			string sss(ss.str());
+
+			if(i != 0)
+			{
+				ostringstream ss;
+				ss << (off + i);
+				string sss(ss.str());
+
+				string content = "\tlw $"+s;
+				content += " "+sss;
+				content += "($fp)";
+				text.push_back(content);
+			}
+
+			string content = "\tsw $"+s;
 			content += " "+sss;
 			content += "($fp)";
 			text.push_back(content);
@@ -1029,10 +1085,21 @@ class float_astnode : public exp_astnode
 		}
 		virtual string generate_code()
 		{
+			flabel++;
 			ostringstream ss;
-			ss << val;
+			ss << flabel;
 			string sss(ss.str());
-			string content = "\tli.s $f1 "+ sss;
+
+			ostringstream ss1;
+			ss1 << val;
+			string sss1(ss1.str());
+
+			string content = "F" + sss;
+			content += ":";
+			rdata.push_back(content);
+			content = "\t.float " + sss1;
+			rdata.push_back(content);
+			content = "\tl.s $f1 F"+ sss;
 			text.push_back(content);
 			return "f1";
 		}
@@ -1329,7 +1396,14 @@ class ass_astnode : public exp_astnode
 		{
 			string s = right->generate_code();
 			int x = left->offset();
-			store_word(s, x);
+			if((right->t)->name == "Pointer" || (right->t)->name == "int" || (right->t)->name == "float" || (right->t)->name == "array")
+				store_word(s, x, convert);
+			else
+			{
+				int wid = top->struct_size((right->t)->name);
+				int off = right->offset();
+				store_struct(s,x,off,wid);
+			}
 			return "";
 		}
 };
@@ -1765,6 +1839,18 @@ class member_astnode : public ref_astnode
 			string content = "\tlw $t0 "+sss;
 			content += "($fp)";
 			text.push_back(content);
+
+			type * tp = id->t;
+			while(tp->t !=0)tp = tp->t;
+			symTab* s = top->symbStruct(tp->name);
+			type *t1 = s->getType(mem->id_name);
+
+			if(t1->name == "float")
+			{
+				content = "\tmtc1 $t0 $f0";
+				text.push_back(content);
+				return "f0";
+			}
 			return "t0";
 		}
 };

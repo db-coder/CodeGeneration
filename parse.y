@@ -16,6 +16,12 @@
 M 
 	: translation_unit
 	{
+		if(!top->findFunc("main"))
+		{
+			cerr << "test.c:"<<l_no<<": error: ";
+			cerr<<"function 'main' not found"<<endl;
+			ABORT();
+		}
 		cout<<"\t.rdata"<<endl;	 	
  		for (int i = 0; i < rdata.size(); ++i)
  		{
